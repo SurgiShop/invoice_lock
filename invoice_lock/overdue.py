@@ -1,10 +1,10 @@
 import frappe
-from frappe.utils import getdate, now_date, add_days
+from frappe.utils import getdate, now, add_days
 
 CUSTOM_LOCKED_FIELD = "custom_account_locked"
 
 def check_overdue_invoices_and_lock_customers():
-    today = getdate(now_date())
+    today = getdate(now())
     date_80_days_ago = add_days(today, -80)
     date_90_days_ago = add_days(today, -90)
 
