@@ -65,3 +65,7 @@ def notify_account_manager(invoice_doc, days_overdue):
                 <p><strong>Action Required:</strong> Please follow up. Customer will be locked at 90 days overdue.</p>
             """
         )
+
+@frappe.whitelist()
+def run_invoice_lock():
+    check_overdue_invoices_and_lock_customers()
