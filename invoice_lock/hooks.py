@@ -11,4 +11,10 @@ scheduler_events = {
     ]
 }
 
-fixtures = ["Custom Field"]
+fixtures = [
+    "Custom Field",
+    {
+        "doctype": "Role",
+        "filters": [["name", "in", ["Customer Unlocker"]]]
+    }
+]
