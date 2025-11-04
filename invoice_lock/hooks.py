@@ -22,4 +22,14 @@ fixtures = [
 # INCLUDE JS FILE FOR SALES ORDER AND QUOTATION
 app_include_js = "/assets/invoice_lock/js/customer_lock_check.js"
 
+# Server-side validation hooks
+doc_events = {
+    "Sales Order": {
+        "validate": "invoice_lock.validation.validate_customer_not_locked"
+    },
+    "Quotation": {
+        "validate": "invoice_lock.validation.validate_customer_not_locked"
+    }
+}
+
 
