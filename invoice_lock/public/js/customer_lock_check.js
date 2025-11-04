@@ -1,19 +1,24 @@
 frappe.ui.form.on(['Sales Order', 'Quotation'], {
   refresh(frm) {
     // Trigger on form load if customer already set
-    if (frm.doc.customer) {
-      check_customer_lock(frm);
-    }
+    check_customer_lock(frm);
   },
   customer(frm) {
-    // Trigger when customer field is selected or changed
-    if (frm.doc.customer) {
-      check_customer_lock(frm);
-    }
+    // Trigger when customer field changes
+    check_customer_lock(frm);
+  }
+});
+
+// Extra check for dynamic fields after render
+frappe.ui.form.on('Quotation', {
+  onload_post_render(frm) {
+    check_customer_lock(frm);
   }
 });
 
 function check_customer_lock(frm) {
+  if (!frm.doc.customer) return;
+
   frappe.call({
     method: "frappe.client.get",
     args: {
@@ -28,6 +33,9 @@ function check_customer_lock(frm) {
           indicator: "red"
         });
         frm.set_value('customer', '');
+        frm.doc.customer_locked = true;
+      } else {
+        frm.doc.customer_locked = false;
       }
     }
   });
