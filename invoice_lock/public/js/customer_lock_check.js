@@ -19,7 +19,8 @@ function show_customer_lock_banner(frm) {
         return;
       }
 
-      const status = (r.message.status || "").toLowerCase();
+      const statusLabel = r.message.status_label || "";
+      const status = (statusLabel || r.message.status || "").toLowerCase();
       const isHardLock = status.includes("hard");
       const bannerText = isHardLock
         ? __("Customer is Locked 50+ Days Past Due")

@@ -1,14 +1,22 @@
 import frappe
 from frappe import _
+from frappe.utils import strip_html
 
-from invoice_lock.overdue import CUSTOM_LOCK_DAYS_FIELD, CUSTOM_LOCK_STATUS_FIELD, CUSTOM_LOCKED_FIELD
+from invoice_lock.overdue import (
+    CUSTOM_LOCK_DAYS_FIELD,
+    CUSTOM_LOCK_STATUS_FIELD,
+    CUSTOM_LOCKED_FIELD,
+    ensure_customer_lock_fields,
+)
 
 
 def validate_customer_not_locked(doc, method):
     """Prevent saving Sales Order or Quotation if customer is locked"""
     if not doc.customer:
         return
-    
+
+    ensure_customer_lock_fields()
+
     lock_data = frappe.db.get_value(
         "Customer",
         doc.customer,
@@ -19,7 +27,8 @@ def validate_customer_not_locked(doc, method):
     if not lock_data or not lock_data.get(CUSTOM_LOCKED_FIELD):
         return
 
-    status = lock_data.get(CUSTOM_LOCK_STATUS_FIELD) or _("Locked")
+    status_html = lock_data.get(CUSTOM_LOCK_STATUS_FIELD)
+    status = strip_html(status_html) if status_html else _("Locked")
     days_overdue = lock_data.get(CUSTOM_LOCK_DAYS_FIELD) or 0
 
     frappe.throw(
@@ -41,6 +50,8 @@ def check_customer_lock_status(customer):
     if not customer:
         return {"locked": False}
 
+    ensure_customer_lock_fields()
+
     lock_data = frappe.db.get_value(
         "Customer",
         customer,
@@ -54,6 +65,7 @@ def check_customer_lock_status(customer):
     return {
         "locked": bool(lock_data.get(CUSTOM_LOCKED_FIELD)),
         "status": lock_data.get(CUSTOM_LOCK_STATUS_FIELD),
+        "status_label": strip_html(lock_data.get(CUSTOM_LOCK_STATUS_FIELD) or "") or None,
         "days_overdue": lock_data.get(CUSTOM_LOCK_DAYS_FIELD),
     }
 
@@ -62,6 +74,8 @@ def enforce_customer_unlock_permissions(doc, method):
     """Allow only Customer Unlocker role to clear lock flags."""
     if doc.is_new():
         return
+
+    ensure_customer_lock_fields()
 
     lock_data = frappe.db.get_value(
         "Customer",
