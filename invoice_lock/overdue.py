@@ -77,7 +77,7 @@ def check_overdue_invoices_and_lock_customers():
         filters={
             "docstatus": 1,
             "outstanding_amount": (">", 0),
-            "due_date": ("<", oldest_due_date),
+            "due_date": ("<=", oldest_due_date),
         },
         fields=[
             "name",
