@@ -40,11 +40,12 @@ def ensure_customer_lock_fields():
             {
                 "fieldname": CUSTOM_LOCK_STATUS_FIELD,
                 "label": "Account Lock Status",
-                "fieldtype": "Data",  # ✅ Changed from HTML/Text Editor to Data
+                "fieldtype": "Small Text",  # ✅ Changed from "Data"
                 "read_only": 1,
                 "no_copy": 1,
                 "insert_after": CUSTOM_LOCKED_FIELD,
                 "depends_on": f"eval:doc.{CUSTOM_LOCKED_FIELD}",
+
             },
         )
 
