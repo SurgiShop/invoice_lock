@@ -1,8 +1,6 @@
 from typing import Optional
-
 import frappe
 from frappe.utils import add_days, getdate, now
-
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 
 CUSTOM_LOCKED_FIELD = "custom_account_locked"
@@ -20,7 +18,6 @@ _customer_fields_ensured = False
 
 def ensure_customer_lock_fields():
     global _customer_fields_ensured
-
     if _customer_fields_ensured:
         return
 
@@ -43,30 +40,13 @@ def ensure_customer_lock_fields():
             {
                 "fieldname": CUSTOM_LOCK_STATUS_FIELD,
                 "label": "Account Lock Status",
-                "fieldtype": "Text Editor",
+                "fieldtype": "Data",  # ✅ Changed from HTML/Text Editor to Data
                 "read_only": 1,
                 "no_copy": 1,
                 "insert_after": CUSTOM_LOCKED_FIELD,
+                "depends_on": f"eval:doc.{CUSTOM_LOCKED_FIELD}",
             },
         )
-    else:
-        # Ensure existing field uses Text Editor so stored HTML is rendered from value
-        custom_field_name = frappe.db.get_value(
-            "Custom Field",
-            {"dt": "Customer", "fieldname": CUSTOM_LOCK_STATUS_FIELD},
-            "name",
-        )
-        if custom_field_name:
-            cf_doc = frappe.get_doc("Custom Field", custom_field_name)
-            if (
-                cf_doc.fieldtype != "Text Editor"
-                or cf_doc.options
-                or cf_doc.depends_on != f"eval:doc.{CUSTOM_LOCKED_FIELD}"
-            ):
-                cf_doc.fieldtype = "Text Editor"
-                cf_doc.options = ""
-                cf_doc.depends_on = f"eval:doc.{CUSTOM_LOCKED_FIELD}"
-                cf_doc.save(ignore_permissions=True)
 
     if not frappe.db.has_column("Customer", CUSTOM_LOCK_DAYS_FIELD):
         create_custom_field(
@@ -86,7 +66,6 @@ def ensure_customer_lock_fields():
 
 def check_overdue_invoices_and_lock_customers():
     ensure_customer_lock_fields()
-
     today = getdate(now())
 
     overdue_invoices = frappe.get_list(
@@ -96,14 +75,7 @@ def check_overdue_invoices_and_lock_customers():
             "outstanding_amount": (">", 0),
             "due_date": ("<", today),
         },
-        fields=[
-            "name",
-            "customer",
-            "due_date",
-            "outstanding_amount",
-            "customer_name",
-            "company",
-        ],
+        fields=["name", "customer", "due_date", "outstanding_amount", "customer_name", "company"],
     )
 
     locks_by_customer = {}
@@ -143,13 +115,12 @@ def _apply_lock(customer_name, lock_info, today):
     lock_value = lock_info["lock_status"]
 
     customer_doc = frappe.get_doc("Customer", customer_name)
-    current_locked = bool(customer_doc.get(CUSTOM_LOCKED_FIELD))
     current_status = customer_doc.get(CUSTOM_LOCK_STATUS_FIELD)
     current_days = customer_doc.get(CUSTOM_LOCK_DAYS_FIELD)
 
     status_text = _format_status_html(lock_value, days_overdue)
 
-    status_changed = (current_status != status_text) or (not current_locked)
+    status_changed = (current_status != status_text)
     needs_save = status_changed or current_days != days_overdue
 
     if not needs_save:
@@ -178,7 +149,7 @@ def _format_status_html(lock_value, days_overdue):
             '<i class="fa fa-exclamation-triangle"></i> '
             'CUSTOMER IS SOFT LOCKED (40+ DAYS OVERDUE) SEE ACCOUNTING.</div>'
         )
-    return lock_value
+    return ""
 
 
 def _notify_account_manager(customer_doc, invoice_doc, lock_status, days_overdue, today):
