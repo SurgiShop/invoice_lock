@@ -58,14 +58,14 @@ def ensure_customer_lock_fields():
         )
         if custom_field_name:
             cf_doc = frappe.get_doc("Custom Field", custom_field_name)
-        if (
-            cf_doc.fieldtype != "Text Editor"
-            or cf_doc.options
-            or cf_doc.depends_on != f"eval:doc.{CUSTOM_LOCKED_FIELD}"
-        ):
+            if (
+                cf_doc.fieldtype != "Text Editor"
+                or cf_doc.options
+                or cf_doc.depends_on != f"eval:doc.{CUSTOM_LOCKED_FIELD}"
+            ):
                 cf_doc.fieldtype = "Text Editor"
                 cf_doc.options = ""
-            cf_doc.depends_on = f"eval:doc.{CUSTOM_LOCKED_FIELD}"
+                cf_doc.depends_on = f"eval:doc.{CUSTOM_LOCKED_FIELD}"
                 cf_doc.save(ignore_permissions=True)
 
     if not frappe.db.has_column("Customer", CUSTOM_LOCK_DAYS_FIELD):
