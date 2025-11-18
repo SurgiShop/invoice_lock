@@ -8,8 +8,7 @@ app_license = "MIT"
 # Daily scheduled tasks
 scheduler_events = {
     "daily": [
-        "invoice_lock.overdue.check_overdue_invoices_and_lock_customers",
-        "invoice_lock.tasks.notify_locked_customers"
+        "invoice_lock.overdue.check_overdue_invoices_and_lock_customers"
     ]
 }
 
