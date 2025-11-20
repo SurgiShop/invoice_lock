@@ -110,6 +110,18 @@ def _get_lock_status_for_days(days_overdue: int) -> Optional[str]:
     return None
 
 
+def _get_current_lock_type(current_status_html):
+    """Extract the lock type (SOFT_LOCK_VALUE, HARD_LOCK_VALUE, or None) from status HTML"""
+    if not current_status_html:
+        return None
+    status_lower = current_status_html.lower()
+    if "hard locked" in status_lower:
+        return HARD_LOCK_VALUE
+    if "soft locked" in status_lower:
+        return SOFT_LOCK_VALUE
+    return None
+
+
 def _apply_lock(customer_name, lock_info, today):
     invoice = lock_info["invoice"]
     days_overdue = lock_info["days_overdue"]
@@ -119,10 +131,15 @@ def _apply_lock(customer_name, lock_info, today):
     current_status = customer_doc.get(CUSTOM_LOCK_STATUS_FIELD)
     current_days = customer_doc.get(CUSTOM_LOCK_DAYS_FIELD)
 
+    # Get current lock type from existing status
+    current_lock_type = _get_current_lock_type(current_status)
+    
+    # Determine if lock type actually changed (not just days overdue)
+    lock_type_changed = (current_lock_type != lock_value)
+    
     status_text = _format_status_html(lock_value, days_overdue)
-
-    status_changed = (current_status != status_text)
-    needs_save = status_changed or current_days != days_overdue
+    status_html_changed = (current_status != status_text)
+    needs_save = status_html_changed or current_days != days_overdue
 
     if not needs_save:
         return
@@ -132,7 +149,9 @@ def _apply_lock(customer_name, lock_info, today):
     customer_doc.set(CUSTOM_LOCK_DAYS_FIELD, days_overdue)
     customer_doc.save(ignore_permissions=True)
 
-    if status_changed:
+    # Only send email if the lock TYPE changed (e.g., unlocked -> soft, soft -> hard)
+    # Not if just the days overdue increased but lock type stayed the same
+    if lock_type_changed:
         _notify_account_manager(customer_doc, invoice, lock_value, days_overdue, today)
 
 
